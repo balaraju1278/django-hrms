@@ -8,6 +8,12 @@ import datetime
 from django.db import models
 from django.contrib import admin
 from django.utils import timezone
+from django.core.validators import (
+    RegexValidator,
+    MinValueValidator,
+    MaxValueValidator,
+    ValidationError    
+    )
 
 from django.utils.translation import ugettext as _
 from operations.utils.status import CALL_STATUS
@@ -28,8 +34,7 @@ class Call(models.Model):
     date_of_creation = models.DateTimeField(
                 verbose_name=_("Created at"), 
                 auto_now_add=True)
-    date_due = models.DateTimeField(
-                auto_now_add=True,blank=True)
+    date_due = models.DateTimeField()
     last_modification = models.DateTimeField(
                 verbose_name=_("Last Modified"),
                 auto_now=True)
@@ -86,6 +91,42 @@ class InvestorCall(Call, Person):
     
     def __str__(self):
         return self.employee + "===>" + self.name
+    
+    def validate_unique(self, *args, **kwargs):
+        super(InvestorCall, self).validate_unique(*args, **kwargs)
+        
+        qs = self.__class__.default_manager.filter(
+            date_of_creation__lt=self.date_due,
+            date_due__gt=self.date_of_creation
+        )
+        
+        if not self._state.adding and self.pk is not None:
+            qs = qs.exclude(pk=self.pk)
+        
+        if qs.exists():
+            raise ValidationError(
+                'overlapping date range'
+            )
+        
+    def clean(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name
+        if self.pref_name:
+            self.pref_name = self.pref_name.lower()
+        if self.email:
+            self.email = self.email.lower()
+        if self.role:
+            self.role = self.role.lower()
+        if self.company:
+            self.company = self.company.lower()
+        if self.description:
+            self.description = self.description.lower()
+        if self.result_node:
+            self.result_note = self.result_note.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(InvestorCall, self).save(*args, **kwargs)
         
     class Meta:
         verbose_name = 'Investor Calls'
@@ -100,6 +141,54 @@ class InterviewCall(Call, Person):
     
     def __str__(self):
         return self.employee + '===>' + self.name
+    
+    
+    def validate_unique(self, *args, **kwargs):
+        super(InvestorCall, self).validate_unique(*args, **kwargs)
+        
+        email_qs = self.__class__.default_manager.filter(
+            email=self.email        
+        )
+        number_qs = self.__class__.default_manager.filter(
+            phone_number=self.phone_number        
+        )
+        qs = self.__class__.default_manager.filter(
+            date_of_creation__lt=self.date_due,
+            date_due__gt=self.date_of_creation
+        )
+        
+        if not self._state.adding and self.pk is not None:
+            qs = qs.exclude(pk=self.pk)
+        
+        if qs.exists():
+            raise ValidationError(
+                'overlapping date range'
+            )
+        if email_qs.exists():
+            raise ValidationError("Already Interviewd this candidate")
+        
+        if number_qs.exists():
+            raise ValidationErrr("Already Interviewd this candidate")
+        
+    def clean(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name
+        if self.pref_name:
+            self.pref_name = self.pref_name.lower()
+        if self.email:
+            self.email = self.email.lower()
+        if self.role:
+            self.role = self.role.lower()
+        if self.company:
+            self.company = self.company.lower()
+        if self.description:
+            self.description = self.description.lower()
+        if self.result_node:
+            self.result_note = self.result_note.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(InvestorCall, self).save(*args, **kwargs)
         
     class Meta:
         verbose_name = _('Interview Calls')
@@ -111,6 +200,42 @@ class CustomerCall(Call, Person):
     def __str__(self):
         return self.employee + '===>' + self.name
     
+    def validate_unique(self, *args, **kwargs):
+        super(InvestorCall, self).validate_unique(*args, **kwargs)
+        
+        qs = self.__class__.default_manager.filter(
+            date_of_creation__lt=self.date_due,
+            date_due__gt=self.date_of_creation
+        )
+        
+        if not self._state.adding and self.pk is not None:
+            qs = qs.exclude(pk=self.pk)
+        
+        if qs.exists():
+            raise ValidationError(
+                'overlapping date range'
+            )
+
+        
+    def clean(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name
+        if self.pref_name:
+            self.pref_name = self.pref_name.lower()
+        if self.email:
+            self.email = self.email.lower()
+        if self.role:
+            self.role = self.role.lower()
+        if self.company:
+            self.company = self.company.lower()
+        if self.description:
+            self.description = self.description.lower()
+        if self.result_node:
+            self.result_note = self.result_note.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(InvestorCall, self).save(*args, **kwargs)
     class Meta:
         verbose_name = _("Customer Calls")
         verbose_name_plural = _("Customer Calls")

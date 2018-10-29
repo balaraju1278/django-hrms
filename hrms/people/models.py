@@ -2,13 +2,14 @@
     employee models lives here
 """
 # Python Imports
-from __future__ import unicode_literals
+import re
 from decimal import Decimal
 
 from django.core.validators import (
     RegexValidator,
     MinValueValidator,
-    MaxValueValidator
+    MaxValueValidator,
+    ValidationError    
     )
 from django.db import models
 from django.utils.translation import ugettext as _
@@ -18,6 +19,37 @@ from django.conf import settings
 
 
 NAME_REGEX = '^[a-zA-Z]*$'
+
+def validate_linkedin(value):
+    """
+        validates linkedin profile valid or not
+    """
+    ld_inst = value
+    ld_reg = re.compile('((http(s?)://)*([a-zA-Z0-9\-])*\.|[linkedin])[linkedin/~\-]+\.[a-zA-Z0-9/~\-_,&=\?\.;]+[^\.,\s<]')
+    validate = ld_reg.match(ld_inst)
+    if validate == None:
+        raise ValidationError(
+            '%(value)s is not valid Linkedin Id',
+            params={'value': value},
+            )
+
+
+def validate_github(value):
+    pass
+
+
+def validate_pan_number(value):
+    """
+        validates vallid PAN id or not
+    """
+    pan_inst = value
+    pan_regex = r'^[A-Z]{5}[0-9]{4}[A-Z]$'
+    validate = re.match(pan_regex, pan_inst)
+    if validate == None:
+        raise ValidationError(
+            '%(value)s is not valid PAN number',
+            params={'value': value},
+            )
 
 class Department(models.Model):
     """
@@ -55,7 +87,27 @@ class Department(models.Model):
             
     def get_absolute_url(self):
         pass
+        
+    def validate_unique(self, *args, **kwargs):
+        super(Department, self).validate_unique(*args, **kwargs)
+        
+        qs = self.__class__.default_manager.filter(
+            Q(name=self.name) | Q(code=self.code)        
+        ) 
+        if qs.exists():
+            raise ValidationError(
+                "Please Enter Valid name and code"            
+            )
+    def clean(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name.lower()
+        if self.code:
+            self.code = self.code.lower()
     
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Department, self).save(*args, **kwargs)
+        
     class Meta:
         verbose_name = _('Department')
         verbose_name_plural = _('Department')
@@ -198,6 +250,37 @@ class Employee(models.Model):
         """
         return self.date_of_birth.strftime('%d, %b %Y')
     
+    def validate_unique(self, *args, **kwargs):
+        super(Employee, self).validate_unique(*args, **kwargs)
+        
+        email_qs = self.__class__.default_manager.filter(
+                    company_email=self.company_email        
+        )
+        emp_code_qs = self.__class__.default_manager.filter(
+                    emp_code=self.emp_code        
+        )
+        if email_qs.exists():
+            raise ValidationError("Email Id Already exists with another employee")
+            
+        if emp_code_qs.exists():
+            raise ValidationError("Employee Id Already exists with another employee")
+    
+    def clean(self, *args, **kwargs):
+        if self.first_name:
+            self.first_name = self.first_name.lower()
+        if self.last_name:
+            self.last_name = self.last_name.lower()
+        if self.pref_name:
+            self.pref_name = self.pref_name.lower()
+        if self.emp_code:
+            self.emo_code = self.emp_code.lower()
+        if self.company_email:
+            self.company_email = self.company_email.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Employee, self).save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Employee")
         verbose_name_plural = _("Employees")
@@ -263,7 +346,17 @@ class EmpDesignation(models.Model):
             return self.code
         else:
             return "n/a" 
+
+    def clean(self, *args, **kwargs):
+        if self.title:
+            self.title = self.title.lower()
+        if self.code:
+            self.code = self.code.lower()
     
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(EmpDesignation, self).save(*args,**kwargs)
+        
     class Meta:
         verbose_name = _("Designtion")
         verbose_name_plural = _("Designation")
@@ -283,6 +376,7 @@ class EmpContactInfo(models.Model):
                     verbose_name=_("Contact Number"),
                     blank=True, null=True)
     linkedin = models.CharField(
+                    validators=[validate_linkedin],
                     max_length=150, unique=True,
                     verbose_name=_("LinkedIn ID"), 
                     blank=True, null=True) 
@@ -323,7 +417,38 @@ class EmpContactInfo(models.Model):
             return self.contact_number
         else:
             return "n/a"
-            
+    def validate_unique(self, *args, **kwargs):
+        super(EmpContactInfo, self).validate_unique(*args, **kwargs)
+        
+        email_qs = self.__class__.default_manager.filter(
+            contact_email=self.contact_email        
+        )
+        number_qs = self.__class__.default_manager.filter(
+            contact_number=self.contact_number        
+        )
+        
+        if email_qs.exists():
+            raise ValidationError("Duplicate email")
+        
+        if number_qs.exists():
+            raise ValidationError("Duplicate Number")
+                
+    def clean(self, *args, **kwargs):
+        if self.contact_email:
+            self.contact_email = self.contact_email.lower()
+        if self.linkedin:
+            self.linkedin = self.linkedin.lower()
+        if self.github:
+            self.github = self.github.lower()
+        if self.facebook:
+            self.facebook = self.facebook.lower()
+        if self.blog:
+            self.blog = self.blog.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(EmpContactInfo, self).save(*args, **kwargs)
+        
     class Meta:
         verbose_name = 'Employees Contact Information'
         verbose_name_plural = 'Employees Contact Information'
@@ -386,6 +511,21 @@ class EmpMailingAddress(models.Model):
     def __str__(self):
         return str(self.employee)
     
+
+    def clean(self, *args, **kwargs):
+        if self.street:
+            self.street = self.street.lower()
+        if self.city:
+            self.city = self.city.lower()
+        if self.state:
+            self.state = self.state.lower()
+        if self.country:
+            self.country = self.country.lower()
+    
+    def save(self, *args,  **kwargs):
+        self.full_clean()
+        super(EmpMailingAddress, self).save(*args, **kwargs)
+    
     class Meta:
         verbose_name = _('Employee Mailing Address')
         verbose_name_plural = _("Employee Mailing Address")
@@ -409,6 +549,7 @@ class EmpBankInfo(models.Model):
                         blank=True, null=True,
                         verbose_name=_("Bank Name"))
     pan_num = models.CharField(
+                        validators=[validate_pan_number],        
                         max_length=50, unique=True,
                         blank=True, null=True,
                         verbose_name=_("PAN ID"))
@@ -438,6 +579,26 @@ class EmpBankInfo(models.Model):
         else:
             return "n/a"
             
+    def validate_unique(self, *args, **kwargs):
+        super(EmpBankInfo, self).validate_unique(*args, **kwargs)
+        
+        b_qs = self.__class__.default_manager.filter(
+            bank_account_number=self.bank_account_number        
+        )
+        p_qs = self.__class__.default_manager.filter(
+            pan_num=self.pan_num        
+        )
+        
+        if b_qs.exists():
+            raise ValidationError("Duplicate Bank Account Number")
+        
+        if p_qs.exists():
+            raise ValidationError("Duplicate PAN Number")
+        
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(EmpBankInfo, self).save(*args, **kwargs)
+        
     class Meta:
         verbose_name = _("Employees Bank Details")
         verbose_name_plural = _("Employees Bank Details")

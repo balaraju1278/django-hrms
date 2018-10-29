@@ -1,4 +1,10 @@
 from django.db import models
+from django.core.validators import (
+    RegexValidator,
+    MinValueValidator,
+    MaxValueValidator,
+    ValidationError    
+    )
 from django.utils.translation import ugettext as _
 from operations.utils.postalaaddressprefix import POSTALADDRESSPREFIX
 
@@ -11,6 +17,26 @@ class PhoneAddress(models.Model):
             max_length=15, 
             verbose_name=_("Phone Number"))
     
+    def __str__(self):
+        return self.phone
+    
+    def validate_unique(self, *args, **kwargs):
+        super(PhoneAddress, self).validate_unique(*args, **kwargs)
+        
+        qs = self.__class__.default_manager.filter(
+            phone=self.phone        
+        )
+        if qs.exists():
+            raise ValidationError("Duplicate Phone Address")
+            
+    def clean(self, *args, **kwargs):
+        if self.phone:
+            self.phone=self.phone.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(PhoneAddress, self).save(*args, **kwargs)
+        
     class Meta:
         verbose_name = _("Phone Address")
         verbose_name_plural = _("Phone Address")
@@ -24,6 +50,26 @@ class EmailAddress(models.Model):
             max_length=200, 
             verbose_name=_("Email Address"))
     
+    def __str__(self):
+        return self.email
+    
+    def validate_unique(self, *args, **kwargs):
+        super(EmailAddress, self).validate_unique(*args, **kwargs)
+        
+        qs = self.__class__.default_manager.filter(
+            email=self.email        
+        )
+        if qs.exists():
+            raise ValidationError("Duplicate Email ID")
+            
+    def clean(self, *args, **kwargs):
+        if self.email:
+            self.email=self.email.lower()
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(EmailAddress, self).save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Email Address")
         verbose_name_plural = _("Email Address")

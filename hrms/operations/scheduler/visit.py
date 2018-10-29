@@ -92,6 +92,9 @@ class CustomerVisit(models.Model):
         self.comming_from = self.comming_from.lower()
         super(CustomerVisit, self).save(*args, **kwargs)
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(CustomerVisit, self).save(*args, **kwargs)
         
     def get_full_name(self):
         """
