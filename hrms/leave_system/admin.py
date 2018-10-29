@@ -23,3 +23,4 @@ class LeaveAppAdmin(admin.ModelAdmin):
     actions = [approve_multiple]
 
 admin.site.register(LeaveApplication, LeaveAppAdmin)
+
