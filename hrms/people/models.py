@@ -324,6 +324,25 @@ class Employee(models.Model):
         """
         return '{}-{}-{}'.format(self.first_name, self.last_name, self.emp_code)
     
+    @staticmethod
+    def autocomplete_search_fields():
+        return ("id__iexact", "first_name__icontains",)        
+    
+    
+    def get_descendants(self):
+        """
+            returns descentants from same department
+        """
+        dsc_emplooyes = self.__class__.objects.filter(department=self.department)
+        return dsc_emplooyes
+    
+    def count_department_emps(self):
+        """
+            returns count of instnace department emplooyes
+        """
+        emp_count = self.__class__.objects.filter(department=self.department).count()
+        return emp_count
+        
     @property
     def get_full_name(self):
         """
@@ -723,6 +742,13 @@ class EmpMailingAddress(models.Model):
         """
         return str(self.employee)
     
+    def get_descendents_city(self):
+        """
+            return same city emplooyes
+        """
+        city_emplooyes = self.__class__objects.filter(city__startswith=self.city+"/")
+        return city_emplooyes
+        
     @property
     def get_door_num(self):
         """
@@ -959,7 +985,14 @@ class EmpSkillProfile(models.Model):
             string representaion of instance model
         """
         return "{}".format(self.emplooye)
-
+    
+    def get_experts_descends(self):
+        """
+            returns total experts in instance expert in domain
+        """
+        experts = self.__class__.objects.filter(expert_in_domain__icontaines=self.expert_in_domain)
+        return experts
+        
     @property
     def get_primary_skills(self):
         """

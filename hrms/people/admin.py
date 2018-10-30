@@ -1,3 +1,18 @@
+"""
+    Author: Bala
+    Description: Emplooye Admin models lives here
+    models:
+            DepartmentAdmin: department information
+            EmployeeAdmin: emplooyes general information
+            EmpDesignationAdmin: emplooye desgination information
+            EmpContactInfoAdmin: emplooye contact information
+            EmpMailingAddressAdmin: emplooye mailing address information
+            EmpBankInfoAdmin: emplooye bank details information
+            EmpSkillProfileAdmin: emplooye skill profile information
+    
+    note: feture actions need to impliment
+"""
+
 from django.contrib import admin
 from people.models import (Department,
                            Employee,
