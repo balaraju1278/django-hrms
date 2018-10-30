@@ -1,5 +1,11 @@
 from django.contrib import admin
-from people.models import Department,Employee,EmpDesignation,EmpContactInfo,EmpMailingAddress,EmpBankInfo
+from people.models import (Department,
+                           Employee,
+                           EmpDesignation,
+                           EmpContactInfo,
+                           EmpMailingAddress,
+                           EmpBankInfo,
+                           EmpSkillProfile)
 # Register your models here.
 
 
@@ -50,7 +56,8 @@ admin.site.register(Employee, EmployeeAdmin)
 
 
 class EmpDesignationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'code', 'employee', 'department',)
+    list_display = ('title', 'code', 
+                    'employee', 'department',)
     list_filter = ('department',)
     actions = []
     
@@ -58,14 +65,16 @@ admin.site.register(EmpDesignation, EmpDesignationAdmin)
 
 
 class EmpContactInfoAdmin(admin.ModelAdmin):
-    list_display = ('employee', 'contact_email', 'contact_number',)
+    list_display = ('employee', 'contact_email', 
+                    'contact_number',)
     actions = []
     
 admin.site.register(EmpContactInfo, EmpContactInfoAdmin)
 
 
 class EmpMailingAddressAdmin(admin.ModelAdmin):
-    list_display = ('employee', 'door_num', 'street', 'city', 'state',)
+    list_display = ('employee', 'door_num', 
+                    'street', 'city', 'state',)
     
     actions = []    
     
@@ -73,9 +82,17 @@ admin.site.register(EmpMailingAddress,EmpMailingAddressAdmin)
 
 
 class EmpBankInfoAdmin(admin.ModelAdmin):
-    list_display = ('bank_account_number', 'ifsc_code', 'bank_name', 'pan_num', 'employee',)
+    list_display = ('bank_account_number', 'ifsc_code', 
+                    'bank_name', 'pan_num', 'employee',)
    
     actions = []
     
 admin.site.register(EmpBankInfo, EmpBankInfoAdmin)
-  
+
+
+class EmpSkillProfileAdmin(admin.ModelAdmin):
+    list_display = ('emplooye', 'primary_skills',
+                    'secondary_skills', 'management_skills', 
+                    'languages')
+    actions = []
+admin.site.register(EmpSkillProfile, EmpSkillProfileAdmin)

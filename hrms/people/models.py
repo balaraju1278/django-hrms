@@ -1,10 +1,23 @@
 """
-    employee models lives here
+    Author: Bala
+    Description: Emplooye models lives here
+    models:
+            Department: department information
+            Employee: emplooyes general information
+            EmpDesignation: emplooye desgination information
+            EmpContactInfo: emplooye contact information
+            EmpMailingAddress: emplooye mailing address information
+            EmpBankInfo: emplooye bank details information
+            EmpSkillProfile: emplooye skill profile information
+    
+    note: mail functionality needs to impliment on model creation/updation
+          to admin and emplooye
 """
 # Python Imports
 import re
 from decimal import Decimal
 
+# django imports
 from django.core.validators import (
     RegexValidator,
     MinValueValidator,
@@ -16,11 +29,15 @@ from django.db.models import Q
 from django.utils.translation import ugettext as _
 from django.conf import settings
 
+# local file imports
+from .utils.fields import CommaSeparatedStringsField
 # Create your models here.
 
 
 NAME_REGEX = '^[a-zA-Z]*$'
 
+
+# validators start 
 def validate_linkedin(value):
     """
         validates linkedin profile valid or not
@@ -36,6 +53,9 @@ def validate_linkedin(value):
 
 
 def validate_github(value):
+    """
+        validates github profile valid or not
+    """
     pass
 
 
@@ -52,6 +72,30 @@ def validate_pan_number(value):
             params={'value': value},
             )
 
+
+def validate_bank_account_number(value):
+    """
+        validates bank account number
+    """
+    pass
+    
+
+def validate_contact_email(value):
+    """
+        validates contact email
+    """
+    pass
+
+
+def validate_company_email(value):
+    """
+        validates company email
+    """
+    pass
+
+
+
+# validators end
 class Department(models.Model):
     """
         department model    
@@ -175,7 +219,7 @@ class Department(models.Model):
         app_label = _("people")
         db_table = _("departments")
         get_latest_by = _("created_at")
-        indexes = [models.Index(fields=['name', 'code', 'department_head', 'department_head_mail'])]
+        #indexes = [models.Index(fields=['name', 'code', 'department_head', 'department_head_mail'])]
         ordering = ['-name', 'department']       
         verbose_name = _('Department')
         verbose_name_plural = _('Department')
@@ -257,6 +301,9 @@ class Employee(models.Model):
                         max_length=100,unique=True, 
                         verbose_name=_("Company Email"), 
                         blank=True, null=True)
+    salary = models.PositiveIntegerField(
+                        verbose_name=_("Salary"), 
+                        blank=True, null=True)
     picture = models.ImageField(
                         null=True,blank=True,
                         height_field='height_field',
@@ -268,9 +315,13 @@ class Employee(models.Model):
     width_field = models.IntegerField(
                         default=600, null=True)
     joined_date = models.DateField(
-                        blank=True, verbose_name=_("Joined Data"))
+                        blank=True,null=True, 
+                        verbose_name=_("Joined Data"))
 
     def __str__(self):
+        """
+            string representation of instance model object
+        """
         return '{}-{}-{}'.format(self.first_name, self.last_name, self.emp_code)
     
     @property
@@ -326,6 +377,16 @@ class Employee(models.Model):
         """
         if self.department:
             return self.department
+        else:
+            return "n/a"
+    
+    @property
+    def get_salary(self):
+        """
+            returns employee salary
+        """
+        if self.salary:
+            return self.salary
         else:
             return "n/a"
 
@@ -391,8 +452,8 @@ class Employee(models.Model):
         app_label = _("people")
         db_table = _("employees")
         get_latest_by = _("joined_at")
-        indexs = [models.Index(fields=['first_name', 'last_name', 'pref_name'])]
-        ordering = ['-joined_at', 'first_name']
+        #indexs = [models.Index(fields=['first_name', 'last_name', 'pref_name'])]
+        ordering = ['-joined_date', 'first_name']
         verbose_name = _("Employee")
         verbose_name_plural = _("Employees")
         
@@ -420,10 +481,13 @@ class EmpDesignation(models.Model):
                     )
                     
     def __str__(self):
-        return '{}-{}'.format(self.user, self.title)
+        """
+            string representation of instance model object
+        """
+        return '{}==>{}==>{}'.format(self.employee, self.title, self.department)
     
     @property
-    def get_user_title(self):
+    def get_employee_title(self):
         """
             returns designation 
         """
@@ -480,8 +544,10 @@ class EmpDesignation(models.Model):
         
     class Meta:
         app_label = ("people")
+        db_table = _("employee_designations")
+        ordering = ['title']
         verbose_name = _("Designtion")
-        verbose_name_plural = _("Designation")
+        verbose_name_plural = _("Designations")
     
 
         
@@ -520,6 +586,9 @@ class EmpContactInfo(models.Model):
                     verbose_name="Employee")
 
     def __str__(self):
+        """
+            string representation of instance model object
+        """
         return str(self.employee)
     
     @property
@@ -544,6 +613,9 @@ class EmpContactInfo(models.Model):
             
     @property
     def validate_unique(self, *args, **kwargs):
+        """
+            validates unique email id, contact number
+        """
         super(EmpContactInfo, self).validate_unique(*args, **kwargs)
         
         email_qs = self.__class__.objects.filter(
@@ -585,6 +657,8 @@ class EmpContactInfo(models.Model):
         
     class Meta:
         app_label = _("people")
+        db_table = _("emplooye_contacts")
+        ordering = ['contact_email']
         verbose_name = 'Employees Contact Information'
         verbose_name_plural = 'Employees Contact Information'
         
@@ -644,10 +718,65 @@ class EmpMailingAddress(models.Model):
                 verbose_name=_("Employee"))
     
     def __str__(self):
+        """
+            string representation of instance model object
+        """
         return str(self.employee)
     
-
+    @property
+    def get_door_num(self):
+        """
+            returns emplooye door number
+        """
+        if self.door_num:
+            return self.door_num
+        else:
+            return "n/a"
+    
+    @property
+    def get_street(self):
+        """
+            returns emplooye street 
+        """
+        if self.street:
+            return self.street
+        else:
+            return "n/a"
+    
+    @property
+    def get_city(self):
+        """
+            returns employee city
+        """
+        if self.city:
+            return self.city
+        else:
+            return "n/a"
+            
+    @property
+    def get_state(self):
+        """
+            returns emplooye state
+        """
+        if self.state:
+            return self.state
+        else:
+            return "n/a"
+    
+    @property
+    def get_picode(self):
+        """
+            returns emplooye picode
+        """
+        if self.pincode:
+            return self.pincode
+        else:
+            return "n/a"
+            
     def clean(self, *args, **kwargs):
+        """
+            validated column types and convert to lower case before save into db
+        """
         if self.street:
             self.street = self.street.lower()
         if self.city:
@@ -658,10 +787,17 @@ class EmpMailingAddress(models.Model):
             self.country = self.country.lower()
     
     def save(self, *args,  **kwargs):
-        self.full_clean()
+        """
+            calling full_clean method 
+            needs to impliment custom logic 
+        """        
+        #self.full_clean()
         super(EmpMailingAddress, self).save(*args, **kwargs)
     
     class Meta:
+        app_label = _("people")
+        db_table = _("emplooye_mailing_address")
+        ordering = ["city"]
         verbose_name = _('Employee Mailing Address')
         verbose_name_plural = _("Employee Mailing Address")
 
@@ -694,8 +830,12 @@ class EmpBankInfo(models.Model):
                 verbose_name=_("Employee"))
     
     def __str__(self):
+        """
+            string representation of instance model object
+        """
         return str(self.employee)
     
+    @property
     def get_bank_account_number(self):
         """
             returns employee bank account number
@@ -705,12 +845,33 @@ class EmpBankInfo(models.Model):
         else:
             return "n/a"
     
+    @property
     def get_pan_num(self):
         """
             returns employee pan id
         """
         if self.pan_num:
             return self.pan_num
+        else:
+            return "n/a"
+    
+    @property
+    def get_ifsc_code(self):
+        """
+            returns ifsc code
+        """
+        if self.ifsc_code:
+            return self.ifsc_code
+        else:
+            return "n/a"
+    
+    @property
+    def get_bank_name(self):
+        """
+            returns bank name
+        """
+        if self.bank_name:
+            return self.bank_name
         else:
             return "n/a"
             
@@ -733,7 +894,18 @@ class EmpBankInfo(models.Model):
         
         if p_qs.exists():
             raise ValidationError("Duplicate PAN Number")
-        
+    
+    def clean(self, *args, **kwargs):
+        """
+            validates column types and convert into lower case
+        """
+        if self.ifsc_code:
+            self.ifsc_code = self.ifsc_code.lower()
+        if self.bank_name:
+            self.bank_name = self.bank_name.lower()
+        if self.pan_num:
+            self.pan_num = self.pan_num.lower()
+            
     def save(self, *args, **kwargs):
         """
             calling full_clean method
@@ -743,5 +915,103 @@ class EmpBankInfo(models.Model):
         super(EmpBankInfo, self).save(*args, **kwargs)
         
     class Meta:
+        app_label = _("people")
+        db_table = _("emplooye_bank_accounts")
+        ordering = ['bank_name']
         verbose_name = _("Employees Bank Details")
         verbose_name_plural = _("Employees Bank Details")
+
+
+class EmpSkillProfile(models.Model):
+    """
+        emplooye skill profile model
+    """
+    emplooye = models.OneToOneField(Employee, 
+                                    verbose_name=_("Emplooye"))
+    working_department = models.OneToOneField(
+                                    Department, 
+                                    verbose_name=_("Working Department"))
+    primary_skills = models.CharField(
+                    max_length=300,
+                    verbose_name=_("Primary Skills"), 
+                    blank=True, null=True)
+    secondary_skills = models.CharField(
+                    max_length=300,                    
+                    verbose_name=_("Secondary Skills"), 
+                    blank=True, null=True)
+    management_skills = models.CharField(
+                    max_length=300,
+                    verbose_name=_("Management Skills"), 
+                    blank=True, null=True)
+    languages = models.CharField(
+                    max_length=300,
+                    verbose_name=_("Language Skills"), 
+                    blank=True, null=True)
+                
+    expert_in_domain = models.CharField(
+                    max_length=200, 
+                    verbose_name=_("Domain Expert"),
+                    blank=True, null=True,
+                    help_text=_("Expert in Domain"))
+
+    def __str__(self):
+        """
+            string representaion of instance model
+        """
+        return "{}".format(self.emplooye)
+
+    @property
+    def get_primary_skills(self):
+        """
+            returns primary skills
+        """
+        if self.primary.skills:
+            return self.primary_skills
+        else:
+            return "n/a"
+    
+    @property
+    def get_secondary_skills(self):
+        """
+            returns seconday skills
+        """
+        if self.secondary_skills:
+            return self.secondary_skills
+        else:
+            return "n/a"
+    
+    @property
+    def get_management_skills(self):
+        """
+            returns management skills
+        """
+        if self.management_skills:
+            return self.management_skills
+        else:
+            return "n/a"
+            
+    @property
+    def get_languages(self):
+        """
+            returns languages
+        """
+        if self.languages:
+            return self.languages
+        else:
+            return "n/a"
+    
+    @property
+    def get_expert_in_domain(self):
+        """
+            returns expert in domain
+        """
+        if self.expert_in_domain:
+            return self.expert_in_domain
+        else:
+            return "n/a"
+    
+    class Meta:
+        app_label = _("people")
+        db_table = _("emplooye_skill_profiles")
+        verbose_name = _("Emplooye Skill Profile")
+        verbose_name_plural = _("Emplooye Skill Profiles")
