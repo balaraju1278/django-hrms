@@ -26,6 +26,7 @@ from django.core.validators import (
     )
 from django.db import models
 from django.db.models import Q
+from django.db.models import DEFERRED
 from django.utils.translation import ugettext as _
 from django.conf import settings
 
@@ -132,6 +133,21 @@ class Department(models.Model):
     def __str__(self):
         return self.name
     
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+        
     @property
     def get_name(self):
         """
@@ -209,6 +225,9 @@ class Department(models.Model):
             calling full_clean method
             needs to impliment custom logic before saving to db
         """
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
         #self.full_clean()
         #if self.department_head_mail:
             # impliment logic to send an invitation email as department head
@@ -316,7 +335,7 @@ class Employee(models.Model):
                         default=600, null=True)
     joined_date = models.DateField(
                         blank=True,null=True, 
-                        verbose_name=_("Joined Data"))
+                        verbose_name=_("Joined Date"))
 
     def __str__(self):
         """
@@ -324,6 +343,21 @@ class Employee(models.Model):
         """
         return '{}-{}-{}'.format(self.first_name, self.last_name, self.emp_code)
     
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+        
     @staticmethod
     def autocomplete_search_fields():
         return ("id__iexact", "first_name__icontains",)        
@@ -505,6 +539,21 @@ class EmpDesignation(models.Model):
         """
         return '{}==>{}==>{}'.format(self.employee, self.title, self.department)
     
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+        
     @property
     def get_employee_title(self):
         """
@@ -610,6 +659,21 @@ class EmpContactInfo(models.Model):
         """
         return str(self.employee)
     
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+        
     @property
     def get_contact_email(self):
         """
@@ -742,6 +806,21 @@ class EmpMailingAddress(models.Model):
         """
         return str(self.employee)
     
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+    
     def get_descendents_city(self):
         """
             return same city emplooyes
@@ -861,6 +940,21 @@ class EmpBankInfo(models.Model):
         """
         return str(self.employee)
     
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+        
     @property
     def get_bank_account_number(self):
         """
@@ -985,6 +1079,24 @@ class EmpSkillProfile(models.Model):
             string representaion of instance model
         """
         return "{}".format(self.emplooye)
+    
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """
+            fetching values from db
+        """
+        if len(values) != len(cls._meta.concrete_fields):
+            values = list(values)
+            values.reverse()
+            values = [
+                    values.pop() if f.attname in field_names else DEFERRED
+                    for f in cls._meta.concrete_fields
+            ]
+        instance = cls(*values)
+        instance._state.adding = False
+        instance._state.db = db
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
     
     def get_experts_descends(self):
         """

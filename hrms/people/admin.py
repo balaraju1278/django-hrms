@@ -21,6 +21,14 @@ from people.models import (Department,
                            EmpMailingAddress,
                            EmpBankInfo,
                            EmpSkillProfile)
+
+from people.forms import (DepartmentForm,
+                           EmployeeForm,
+                           EmpDesignationForm,
+                           EmpContactInfoForm,
+                           EmpMailingAddressForm,
+                           EmpBankInfoForm,
+                           EmpSkillProfileForm)
 # Register your models here.
 
 
@@ -58,14 +66,43 @@ class DepartmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'code',)
     list_filter = ('name', 'code',)
     actions = []
+    form = DepartmentForm
+
     
 admin.site.register(Department, DepartmentAdmin)
 
 
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('emp_code', 'pref_name', 'department', )
+    list_display = ('emp_code', 'pref_name', 'department', 
+                    'gender', 'company_email', 'date_of_birth')
     list_filter = ('department',)
+    
+    def view_date_of_birth(self, obj):
+        return obj.date_of_birth
+    
+    def view_emp_code(self, obj):
+        return obj.emp_code
+    
+    def view_pref_name(self, obj):
+        return obj.pref_name
+    
+    def view_department(self, obj):
+        return obj.department
+    
+    def view_gender(self, obj):
+        return obj.gender
+    
+    def view_company_email(self, obj):
+        return obj.company_email
+    
+    view_emp_code.empty_value_display = '???'
+    view_pref_name.empty_value_display = '???'
+    view_department.empty_value_display = '???'
+    view_gender.empty_value_display = '???'
+    view_company_email.empty_value_display = '???'
+    view_date_of_birth.empty_value_display = '???'
     actions = []
+    form = EmployeeForm
     
 admin.site.register(Employee, EmployeeAdmin)
 
@@ -75,6 +112,7 @@ class EmpDesignationAdmin(admin.ModelAdmin):
                     'employee', 'department',)
     list_filter = ('department',)
     actions = []
+    form = EmpDesignationForm
     
 admin.site.register(EmpDesignation, EmpDesignationAdmin)
 
@@ -83,6 +121,7 @@ class EmpContactInfoAdmin(admin.ModelAdmin):
     list_display = ('employee', 'contact_email', 
                     'contact_number',)
     actions = []
+    form = EmpContactInfoForm    
     
 admin.site.register(EmpContactInfo, EmpContactInfoAdmin)
 
@@ -92,6 +131,7 @@ class EmpMailingAddressAdmin(admin.ModelAdmin):
                     'street', 'city', 'state',)
     
     actions = []    
+    form = EmpMailingAddressForm
     
 admin.site.register(EmpMailingAddress,EmpMailingAddressAdmin)
 
@@ -101,6 +141,7 @@ class EmpBankInfoAdmin(admin.ModelAdmin):
                     'bank_name', 'pan_num', 'employee',)
    
     actions = []
+    form = EmpBankInfoForm
     
 admin.site.register(EmpBankInfo, EmpBankInfoAdmin)
 
@@ -110,4 +151,6 @@ class EmpSkillProfileAdmin(admin.ModelAdmin):
                     'secondary_skills', 'management_skills', 
                     'languages')
     actions = []
+    form = EmpSkillProfileForm
+
 admin.site.register(EmpSkillProfile, EmpSkillProfileAdmin)
