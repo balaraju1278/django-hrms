@@ -16,6 +16,11 @@
 # Python Imports
 import re
 from decimal import Decimal
+import datetime
+import logging
+import traceback
+from urllib.parse import urlparse
+
 
 # django imports
 from django.core.validators import (
@@ -25,6 +30,10 @@ from django.core.validators import (
     ValidationError    
     )
 from django.db import models
+from django.dispatch import receiver
+from django.utils.html import strip_tags
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
 from django.db.models import Q
 from django.db.models import DEFERRED
 from django.utils.translation import ugettext as _
@@ -36,7 +45,7 @@ from .utils.fields import CommaSeparatedStringsField
 
 
 NAME_REGEX = '^[a-zA-Z]*$'
-
+logger = logging.getLogger("django")
 
 # validators start 
 def validate_linkedin(value):
@@ -147,6 +156,20 @@ class Department(models.Model):
         instance._state.db = db
         instance._loaded_values = dict(zip(field_names, values))
         return instance
+    
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)
         
     @property
     def get_name(self):
@@ -228,6 +251,27 @@ class Department(models.Model):
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
+       
+        if self.pk is None:
+            department = self.__class__.objects.create(
+                name=self.name,
+                code=self.code,
+                department_head=self.department_head,
+                department_head_mail=self.department_head_mail                  
+            )
+            department.save()
+        subject = _("New Department was Created with name{}".format(self.name))
+        message = render_to_string(
+            "people/utils/emails/department_created_message.txt",
+            {'department': self.name, 'department_code': self.code, 'head':self.department_head, 'head_mail': self.department_head_mail})
+        
+        try:
+            send_mail(subject, message, settings.HRMS_ADMIN_MAIL, [self.department_head_mail, settings.HRMS_ADMIN_MAIL])
+        except Exception as e:
+            log_message = "Error on department Creation"+\
+                            self.department_head_mail+ "\n" + traceback.print_exc()+\
+                            "\n"+str(e)
+            logger.error(log_message)
         #self.full_clean()
         #if self.department_head_mail:
             # impliment logic to send an invitation email as department head
@@ -357,6 +401,20 @@ class Employee(models.Model):
         instance._state.db = db
         instance._loaded_values = dict(zip(field_names, values))
         return instance
+    
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)
         
     @staticmethod
     def autocomplete_search_fields():
@@ -495,6 +553,40 @@ class Employee(models.Model):
             calling full_clean method
             needs to implement custom logic before save to db
         """
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
+        
+        if self.pk is None:
+            emp = self.__class__.objects.create(
+                first_name=self.first_name,
+                last_name=self.last_name,
+                pref_name=self.pref_name,
+                gender=self.gender,
+                date_of_birth=self.date_of_birth,
+                marital_status=self.marital_status,
+                emp_code=self.emp_code,
+                department=self.department,
+                company_mail=self.company_mail,
+                salary=self.salary,
+                picture=self.picture,
+                joined_date=self.joined_date
+            )
+            emp.save()
+        subject = _("Employee Was add with name{}".format(self.first_name))
+        message = render_to_string(
+            "people/utils/emails/employee_created_message.txt",
+            {'fn':self.first_name, 'ln': self.last_name, 'pn': self.pref_name,
+             'gender':  self.gender, 'dob':self.date_of_birth,'ms':self.marital_status,
+             'ec':self.emp_code, 'dpmnt':self.department, 'cm':self.company_mail,
+             'salary': self.salary, 'joined': self.joined_date})
+        try:
+            send_mail(subject, message, settings.HRMS_ADMIN_MAIL, [self.company_mail, settings.HRMS_ADMIN_MAIL])
+        except Exception as e:
+            log_message = "Error on department Creation"+\
+                            self.company_mail+ "\n" + traceback.print_exc()+\
+                            "\n"+str(e)
+            logger.error(log_message)
         #self.full_clean()
         #if self.company_email:
             # impliment to send an welcome mail to emplooye
@@ -553,6 +645,20 @@ class EmpDesignation(models.Model):
         instance._state.db = db
         instance._loaded_values = dict(zip(field_names, values))
         return instance
+     
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)
         
     @property
     def get_employee_title(self):
@@ -607,8 +713,21 @@ class EmpDesignation(models.Model):
         """
             need to impliment custom logic before saving to db
         """
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
+        
+        if self.pk is None:
+            desgn = self.__class__.objects.create(
+                title=self.title,
+                code=self.code,
+                employee=self.employee,
+                department=self.department
+            )
+            desgn.save()
+            
         #self.full_clean()
-        super(EmpDesignation, self).save(*args,**kwargs)
+        super(self.__class__, self).save(*args,**kwargs)
         
     class Meta:
         app_label = ("people")
@@ -674,6 +793,20 @@ class EmpContactInfo(models.Model):
         instance._loaded_values = dict(zip(field_names, values))
         return instance
         
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)    
+    
     @property
     def get_contact_email(self):
         """
@@ -699,7 +832,7 @@ class EmpContactInfo(models.Model):
         """
             validates unique email id, contact number
         """
-        super(EmpContactInfo, self).validate_unique(*args, **kwargs)
+        super(self.__class__, self).validate_unique(*args, **kwargs)
         
         email_qs = self.__class__.objects.filter(
             contact_email=self.contact_email        
@@ -736,7 +869,21 @@ class EmpContactInfo(models.Model):
             needs to impliment custom logic before saving to db
         """
         #self.full_clean()
-        super(EmpContactInfo, self).save(*args, **kwargs)
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
+        if self.pk is None:
+            emp_cnt = self.__class__.objects.create(
+                    contact_email=self.contact_email,
+                    contact_number=self.contact_number,
+                    linkedin=self.linkedin,
+                    github=self.github,
+                    facebook=self.facebook,
+                    blog=self.blog,
+                    employee=self.employee
+            )
+            emp_cnt.save()
+        super(self.__class__, self).save(*args, **kwargs)
         
     class Meta:
         app_label = _("people")
@@ -821,6 +968,20 @@ class EmpMailingAddress(models.Model):
         instance._loaded_values = dict(zip(field_names, values))
         return instance
     
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)    
+    
     def get_descendents_city(self):
         """
             return same city emplooyes
@@ -897,6 +1058,21 @@ class EmpMailingAddress(models.Model):
             needs to impliment custom logic 
         """        
         #self.full_clean()
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
+        
+        if self.pk is None:
+            emp_mailing = self.__class__.objects.create(
+                door_num=self.door_num,
+                street=self.street,
+                city=self.city,
+                state=self.state,
+                country=self.country,
+                picode=self.pincode,
+                employee=self.employee            
+            )
+            emp_mailing.save()
         super(EmpMailingAddress, self).save(*args, **kwargs)
     
     class Meta:
@@ -908,6 +1084,9 @@ class EmpMailingAddress(models.Model):
 
 
 class EmpBankInfo(models.Model):
+    """
+        Employee Bank info model
+    """
     bank_account_number = models.PositiveIntegerField(
                             unique=True,
                             blank=True,null=True,
@@ -955,6 +1134,20 @@ class EmpBankInfo(models.Model):
         instance._loaded_values = dict(zip(field_names, values))
         return instance
         
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)
+ 
     @property
     def get_bank_account_number(self):
         """
@@ -1031,8 +1224,21 @@ class EmpBankInfo(models.Model):
             calling full_clean method
             needs to impliment custom logic before saving to db
         """
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
+        
+        if self.pk is None:
+            emp_bank=self.__class__.objects.create(
+                bank_account_number=self.bank_account_number,
+                ifsc_code=self.ifsc_code,
+                bank_name=self.bank_name,
+                pan_num=self.pan_num,
+                employee=self.employee
+            )
+            emp_bank.save()
         #self.full_clean()
-        super(EmpBankInfo, self).save(*args, **kwargs)
+        super(self.__class__, self).save(*args, **kwargs)
         
     class Meta:
         app_label = _("people")
@@ -1098,6 +1304,20 @@ class EmpSkillProfile(models.Model):
         instance._loaded_values = dict(zip(field_names, values))
         return instance
     
+    def refresh_from_db(self, using=None, fields=None, **kwargs):
+        """
+            fields contains the name of the deferred field to be
+            loaded
+        """
+        if fields is not None:
+            fields = set(fields)
+            deferred_fields = self.get_deferred_fields()
+             # If any deferred field is going to be loaded
+            if fields.intersection(deferred_fields):
+                # then load all of them
+                fields = fields.union(deferred_fields)
+        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)
+        
     def get_experts_descends(self):
         """
             returns total experts in instance expert in domain
@@ -1155,6 +1375,36 @@ class EmpSkillProfile(models.Model):
         else:
             return "n/a"
     
+    def clean(self, *args, **kwargs):
+        """
+            validiates db column type and convert ot lower case
+        """
+        if self.primary_skills:
+            self.primary_skills = self.primary_skills.lower()
+        if self.secondary_skills:
+            self.secondary_skills = self.secondary_skills.lower()
+        if self.management_skills:
+            self.management_skills = self.management_skills.lower()
+        if self.languages:
+            self.languages = self.languages.lower()
+        if self.expert_in_domain:
+            self.expert_in_domain = self.expert_in_domain.lower()
+    
+    def save(self, *args, **kwargs):
+
+        if not self._state.adding and(
+                            self.creator_id != self._loaded_values['creator_id']):
+            raise ValueError("Updating the value of creator isn't allowed")
+        if self.pk is None:
+            emp_skills = self.__class__.objects.create(
+                primary_skills=self.primary_skills,
+                secondary_skills=self.secondary_skills,
+                management_skills=self.management_skills,
+                languages=self.languages,
+                expert_in_domain=self.expert_in_domain
+            )
+            emp_skills.save()
+            
     class Meta:
         app_label = _("people")
         db_table = _("emplooye_skill_profiles")
