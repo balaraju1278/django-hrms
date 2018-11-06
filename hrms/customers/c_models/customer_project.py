@@ -4,8 +4,10 @@
 """
 from django.db import models 
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettextlazy as _
-
+from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import IntegrityError, models, transaction
 from .customer import Customer
 from people.models import Employee
 
@@ -26,14 +28,15 @@ class CustomerProject(models.Model):
     title = models.CharField(
                                 max_length=300, 
                                 blank=True, null=True, 
-                                varbose_name=_("Project Title"), 
+                                verbose_name=_("Project Title"), 
                                 help_text=_("Customer Project title"))
     description = models.TextField(
                                 verbose_name=_("Description"), 
                                 help_text=_("Small Description about customer project"), 
                                 blank=True, null=True)
     employees = models.ManyToManyField(
-                                Employee, verbose_name=_("Employees"), 
+                                Employee, verbose_name=_("Employees"),
+                                related_name='employees_with_customer', 
                                 help_text=_("Employess working with Customer"))    
     project_head = models.CharField(
                                 max_length=100, 
@@ -41,7 +44,7 @@ class CustomerProject(models.Model):
                                 help_text=_("Project Head[customer side]"), 
                                 blank=True, null=True)
     project_dealer = models.ForeignKey(
-                                Employee, 
+                                Employee,related_name='account_manager_with_customer', 
                                 verbose_name=("Account Manager"), 
                                 help_text=_("Contact Account Manager"),
                                 on_delete=models.CASCADE)
@@ -52,10 +55,66 @@ class CustomerProject(models.Model):
     started_at = models.DateField()
     created_at = models.DateTimeField(auto_now=True)
     modefied_at = models.DateTimeField(auto_now_add=True)
+    slug = models.SlugField(verbose_name=_('Slug'), unique=True, max_length=100)
+
+
+    def __repr__(self):
+        return '%s' % (self.title)
     
     def __str__(self):
-        return self.title
+        return '%s' % (self.title)
     
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if self._meta.concrete_model != other._meta.concrete_model:
+            return False
+        c_pk = self.pk
+        if c_pk is None:
+            return self is other
+        return c_pk == other.pk
+    
+    def __gt__(self, other):
+        return '%s' %(self.__class__.__name__.lower() > other.name.lower())
+    
+    def __lt__(self, other):
+        return '%s' %(self.__class__.name__.lower() < other.name.lower())
+
+    def __hash__(self):
+        if self.pk is None:
+            raise TypeError("Model instances without primary key value are unhashable")
+        return hash(self.pk)
+    
+    def save(self, *args, **kwargs):
+        if self._state.adding and not self.slug:
+            self.slug = self.slugify(self.title)
+            from django.db import router
+            using = kwargs.get("using") or router.db_for_write(
+                    type(self), instance=self)
+            kwargs["using"] = using
+            try:
+                with transaction.atomic(using=using):
+                    res = super(self.__class__, self).save(*args, **kwargs)
+                return res
+            except IntegrityError:
+                pass
+            c_slugs = set(
+                    self.__class__._default_manager.filter(
+                                    slug__startswith=self.slug)
+                                    .values_list('slug',flat=True)            
+            )
+            i = 1
+            while True:
+                slug = self.slugify(self.comapany_name, i)
+                if slug not in c_slugs:
+                    self.slug = slug
+                    # We purposely ignore concurrecny issues here for now.
+                    # (That is, till we found a nice solution...)
+                    return super(self.__class__, self).save(*args, **kwargs)
+                i += 1
+        else:
+            return super(self.__class__, self).save(*args, **kwargs)
+            
     def get_title(self):
         """
             returns project title
@@ -83,15 +142,10 @@ class CustomerProject(models.Model):
         if self.description:
             self.description = self.description.lower()
         if self.project_head:
-            self.project_head = self.project_head()
+            self.project_head = self.project_head.lower()
         super(CustomerProject,self).clean(*args, **kwargs)
         
-    def save(self, *args, **kwargs):
-        """
-            saving current instance of customer project
-        """
-        self.full_clean()
-        super(Customer, self).save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Customer Projects")
         verbose_name_plural = _("Customer Projects")        

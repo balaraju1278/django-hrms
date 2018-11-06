@@ -145,6 +145,7 @@ class EmpContactInfoAdmin(admin.ModelAdmin):
                     'contact_number',)
     actions = []
     
+    """
     def view_employee(self, obj):
         return obj.employee
     
@@ -157,7 +158,7 @@ class EmpContactInfoAdmin(admin.ModelAdmin):
     view_employee.empty_value_display = '???'
     view_contact_email.empty_value_dispaly = '???'
     view_contact_number.empty_value_dispaly = '???'
-    
+    """
     
 admin.site.register(EmpContactInfo, EmpContactInfoAdmin)
 

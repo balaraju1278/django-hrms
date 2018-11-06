@@ -1,8 +1,13 @@
 from django.contrib import admin
-from .models import Book, Video, Blog, Other
+from .models import Book, Author
+from .forms import BookModelFormset,AuthorFormset
 # Register your models here.
 
+
+    
 admin.site.register(Book)
-admin.site.register(Video)
-admin.site.register(Blog)
-admin.site.register(Other)
+
+
+
+    
+admin.site.register(Author)

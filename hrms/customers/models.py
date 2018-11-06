@@ -1,11 +1,8 @@
 from django.db import models
 from .c_models.customer import Customer
+from .c_models.customer_project import CustomerProject
 # Create your models here.
 
-
-class CustomerProject(models.Model):
-    class Meta:
-        verbose_name = "Customer Project"
 
 
 class CustomerBilling(models.Model):

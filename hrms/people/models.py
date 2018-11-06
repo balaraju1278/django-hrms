@@ -212,11 +212,11 @@ class Department(models.Model):
         """
         super(Department, self).validate_unique(*args, **kwargs)
         
-        qs = self.__class__.objects.filter(
+        qs = self.__class__._default_manager.filter(
             Q(name=self.name) | Q(code=self.code)        
         )
         
-        dh_qs = self.__class__.objects.filter(
+        dh_qs = self.__class__._default_manager.filter(
             Q(department_head=self.department_head) | \
             Q(department_head_mail=self.department_head_mail))
             
@@ -248,6 +248,7 @@ class Department(models.Model):
             calling full_clean method
             needs to impliment custom logic before saving to db
         """
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
@@ -275,7 +276,7 @@ class Department(models.Model):
         #self.full_clean()
         #if self.department_head_mail:
             # impliment logic to send an invitation email as department head
-         #   pass
+         #   pass"""
         super(Department, self).save(*args, **kwargs)
         
     class Meta:
@@ -425,14 +426,14 @@ class Employee(models.Model):
         """
             returns descentants from same department
         """
-        dsc_emplooyes = self.__class__.objects.filter(department=self.department)
+        dsc_emplooyes = self.__class__._default_manager.filter(department=self.department)
         return dsc_emplooyes
     
     def count_department_emps(self):
         """
             returns count of instnace department emplooyes
         """
-        emp_count = self.__class__.objects.filter(department=self.department).count()
+        emp_count = self.__class__._default_manager.filter(department=self.department).count()
         return emp_count
         
     @property
@@ -515,13 +516,13 @@ class Employee(models.Model):
         """
         super(Employee, self).validate_unique(*args, **kwargs)
         
-        email_qs = self.__class__.objects.filter(
+        email_qs = self.__class__._default_manager.filter(
                     company_email=self.company_email        
         )
-        emp_code_qs = self.__class__.objects.filter(
+        emp_code_qs = self.__class__._default_manager.filter(
                     emp_code=self.emp_code        
         )
-        pref_qs = self.__class__.objects.filter(
+        pref_qs = self.__class__._default_manager.filter(
                     pref_name=self.pref_name        
         )
         if email_qs.exists():
@@ -553,12 +554,13 @@ class Employee(models.Model):
             calling full_clean method
             needs to implement custom logic before save to db
         """
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
         
         if self.pk is None:
-            emp = self.__class__.objects.create(
+            emp = self.__class__._default_manager.create(
                 first_name=self.first_name,
                 last_name=self.last_name,
                 pref_name=self.pref_name,
@@ -591,6 +593,7 @@ class Employee(models.Model):
         #if self.company_email:
             # impliment to send an welcome mail to emplooye
             #pass
+        """
         super(Employee, self).save(*args, **kwargs)
 
     class Meta:
@@ -713,12 +716,13 @@ class EmpDesignation(models.Model):
         """
             need to impliment custom logic before saving to db
         """
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
         
         if self.pk is None:
-            desgn = self.__class__.objects.create(
+            desgn = self.__class__._default_manager.create(
                 title=self.title,
                 code=self.code,
                 employee=self.employee,
@@ -727,6 +731,7 @@ class EmpDesignation(models.Model):
             desgn.save()
             
         #self.full_clean()
+        """
         super(self.__class__, self).save(*args,**kwargs)
         
     class Meta:
@@ -751,7 +756,7 @@ class EmpContactInfo(models.Model):
                     verbose_name=_("Contact Number"),
                     blank=True, null=True)
     linkedin = models.CharField(
-                    validators=[validate_linkedin],
+                    
                     max_length=150, unique=True,
                     verbose_name=_("LinkedIn ID"), 
                     blank=True, null=True) 
@@ -805,7 +810,7 @@ class EmpContactInfo(models.Model):
             if fields.intersection(deferred_fields):
                 # then load all of them
                 fields = fields.union(deferred_fields)
-        super(self.__class__, self).refresh_from_db(using, fields, **kwargs)    
+        super(EmpContactInfo, self).refresh_from_db(using, fields, **kwargs)    
     
     @property
     def get_contact_email(self):
@@ -832,12 +837,12 @@ class EmpContactInfo(models.Model):
         """
             validates unique email id, contact number
         """
-        super(self.__class__, self).validate_unique(*args, **kwargs)
+        super(EmpContactInfo, self).validate_unique(*args, **kwargs)
         
-        email_qs = self.__class__.objects.filter(
+        email_qs = self.__class__._default_manager.filter(
             contact_email=self.contact_email        
         )
-        number_qs = self.__class__.objects.filter(
+        number_qs = self.__class__._default_manager.filter(
             contact_number=self.contact_number        
         )
         
@@ -869,11 +874,12 @@ class EmpContactInfo(models.Model):
             needs to impliment custom logic before saving to db
         """
         #self.full_clean()
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
         if self.pk is None:
-            emp_cnt = self.__class__.objects.create(
+            emp_cnt = self.__class__._default_manager.create(
                     contact_email=self.contact_email,
                     contact_number=self.contact_number,
                     linkedin=self.linkedin,
@@ -883,7 +889,8 @@ class EmpContactInfo(models.Model):
                     employee=self.employee
             )
             emp_cnt.save()
-        super(self.__class__, self).save(*args, **kwargs)
+        """
+        super(EmpContactInfo, self).save(*args, **kwargs)
         
     class Meta:
         app_label = _("people")
@@ -986,7 +993,7 @@ class EmpMailingAddress(models.Model):
         """
             return same city emplooyes
         """
-        city_emplooyes = self.__class__objects.filter(city__startswith=self.city+"/")
+        city_emplooyes = self.__class__._default_manager.filter(city__startswith=self.city+"/")
         return city_emplooyes
         
     @property
@@ -1058,12 +1065,13 @@ class EmpMailingAddress(models.Model):
             needs to impliment custom logic 
         """        
         #self.full_clean()
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
         
         if self.pk is None:
-            emp_mailing = self.__class__.objects.create(
+            emp_mailing = self.__class__._default_manager.create(
                 door_num=self.door_num,
                 street=self.street,
                 city=self.city,
@@ -1073,6 +1081,7 @@ class EmpMailingAddress(models.Model):
                 employee=self.employee            
             )
             emp_mailing.save()
+        """
         super(EmpMailingAddress, self).save(*args, **kwargs)
     
     class Meta:
@@ -1092,8 +1101,8 @@ class EmpBankInfo(models.Model):
                             blank=True,null=True,
                             verbose_name=_("Bank Account Number"),
                             validators = [
-                                MinValueValidator(10000000),
-                                MaxValueValidator(99999999)
+                                MinValueValidator(100000000),
+                                MaxValueValidator(99999999999)
                             ])
     ifsc_code = models.CharField(
                         max_length=50, 
@@ -1195,10 +1204,10 @@ class EmpBankInfo(models.Model):
         """
         super(EmpBankInfo, self).validate_unique(*args, **kwargs)
         
-        b_qs = self.__class__.default_manager.filter(
+        b_qs = self.__class__._default_manager.filter(
             bank_account_number=self.bank_account_number        
         )
-        p_qs = self.__class__.default_manager.filter(
+        p_qs = self.__class__._default_manager.filter(
             pan_num=self.pan_num        
         )
         
@@ -1224,12 +1233,13 @@ class EmpBankInfo(models.Model):
             calling full_clean method
             needs to impliment custom logic before saving to db
         """
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
         
         if self.pk is None:
-            emp_bank=self.__class__.objects.create(
+            emp_bank=self.__class__._default_manager.create(
                 bank_account_number=self.bank_account_number,
                 ifsc_code=self.ifsc_code,
                 bank_name=self.bank_name,
@@ -1238,6 +1248,7 @@ class EmpBankInfo(models.Model):
             )
             emp_bank.save()
         #self.full_clean()
+        """
         super(self.__class__, self).save(*args, **kwargs)
         
     class Meta:
@@ -1322,7 +1333,7 @@ class EmpSkillProfile(models.Model):
         """
             returns total experts in instance expert in domain
         """
-        experts = self.__class__.objects.filter(expert_in_domain__icontaines=self.expert_in_domain)
+        experts = self.__class__._default_manager.filter(expert_in_domain__icontaines=self.expert_in_domain)
         return experts
         
     @property
@@ -1391,12 +1402,12 @@ class EmpSkillProfile(models.Model):
             self.expert_in_domain = self.expert_in_domain.lower()
     
     def save(self, *args, **kwargs):
-
+        """
         if not self._state.adding and(
                             self.creator_id != self._loaded_values['creator_id']):
             raise ValueError("Updating the value of creator isn't allowed")
         if self.pk is None:
-            emp_skills = self.__class__.objects.create(
+            emp_skills = self.__class__._default_manager.create(
                 primary_skills=self.primary_skills,
                 secondary_skills=self.secondary_skills,
                 management_skills=self.management_skills,
@@ -1404,9 +1415,12 @@ class EmpSkillProfile(models.Model):
                 expert_in_domain=self.expert_in_domain
             )
             emp_skills.save()
+        """
+        super(self.__class__, self).save(*args, **kwargs)
             
     class Meta:
         app_label = _("people")
         db_table = _("emplooye_skill_profiles")
         verbose_name = _("Emplooye Skill Profile")
+
         verbose_name_plural = _("Emplooye Skill Profiles")

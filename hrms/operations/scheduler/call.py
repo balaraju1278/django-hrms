@@ -53,7 +53,7 @@ class Call(models.Model):
     
     def save_status(self, *args, **kwargs):
         self.status = self.status.lower()
-        super(call, self).save(*args, **kwargs)
+        super(Call, self).save(*args, **kwargs)
         
     def get_employee(self):
         """
@@ -95,7 +95,7 @@ class InvestorCall(Call, Person):
     def validate_unique(self, *args, **kwargs):
         super(InvestorCall, self).validate_unique(*args, **kwargs)
         
-        qs = self.__class__.default_manager.filter(
+        qs = self.__class__._default_manager.filter(
             date_of_creation__lt=self.date_due,
             date_due__gt=self.date_of_creation
         )
@@ -146,13 +146,13 @@ class InterviewCall(Call, Person):
     def validate_unique(self, *args, **kwargs):
         super(InvestorCall, self).validate_unique(*args, **kwargs)
         
-        email_qs = self.__class__.default_manager.filter(
+        email_qs = self.__class__._default_manager.filter(
             email=self.email        
         )
-        number_qs = self.__class__.default_manager.filter(
+        number_qs = self.__class__._default_manager.filter(
             phone_number=self.phone_number        
         )
-        qs = self.__class__.default_manager.filter(
+        qs = self.__class__._default_manager.filter(
             date_of_creation__lt=self.date_due,
             date_due__gt=self.date_of_creation
         )
@@ -168,7 +168,7 @@ class InterviewCall(Call, Person):
             raise ValidationError("Already Interviewd this candidate")
         
         if number_qs.exists():
-            raise ValidationErrr("Already Interviewd this candidate")
+            raise ValidationError("Already Interviewd this candidate")
         
     def clean(self, *args, **kwargs):
         if self.name:
@@ -203,7 +203,7 @@ class CustomerCall(Call, Person):
     def validate_unique(self, *args, **kwargs):
         super(InvestorCall, self).validate_unique(*args, **kwargs)
         
-        qs = self.__class__.default_manager.filter(
+        qs = self.__class__._default_manager.filter(
             date_of_creation__lt=self.date_due,
             date_due__gt=self.date_of_creation
         )

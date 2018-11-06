@@ -93,7 +93,7 @@ class EmployeeForm(forms.ModelForm):
             calling __ini__ menthod
             updating field widgets
         """
-        super(self.__class__, self).__init__(*args, **kwargs)
+        super(EmployeeForm, self).__init__(*args, **kwargs)
         self.fields['first_name'].widget.attrs.update({'class': 'special'})
         self.fields['last_name'].widget.attrs.update({'class': 'special'})
         self.fields['pref_name'].widget.attrs.update({'class': 'special'})
@@ -134,7 +134,7 @@ class EmployeeForm(forms.ModelForm):
             validating duplicate pref names
         """
         pref_name_inst = self.cleaned_data.get("pref_name")
-        validate = self.__class__._meta.model.objects.filter(
+        validate = self.__class__._meta.model._default_manager.filter(
                                     pref_name=pref_name_inst).exists()
         if validate:
             raise forms.ValidationError(
@@ -146,7 +146,7 @@ class EmployeeForm(forms.ModelForm):
             validating duplicate emp code
         """
         emp_code_i = self.cleaned_data.get('emp_code')
-        validate = self.__class__._meta.model.objects.filter(
+        validate = self.__class__._meta.model._default_manager.filter(
                                     emp_code=emp_code_i).exists()
         if validate:
             raise forms.ValidationError(
@@ -158,7 +158,7 @@ class EmployeeForm(forms.ModelForm):
             validateing duplicate company email
         """
         email_inst = self.cleaned_data.get('company_email')
-        validate = self.__class__._meta.model.objects.filter(
+        validate = self.__class__._meta.model._default_manager.filter(
                                     company_email=email_inst).exists()
         if validate:
             raise forms.ValidationError(
@@ -207,7 +207,7 @@ class EmpDesignationForm(forms.ModelForm):
             validates designation code
         """
         code_inst = self.cleaned_data.get("code")
-        validate = self.__class__._meta.model.objects.filter(code=code_inst).exists()
+        validate = self.__class__._meta.model._default_manager.filter(code=code_inst).exists()
         if validate:
             raise forms.ValidationError(self.validation_messages.get("code", None))
         return code_inst
@@ -262,7 +262,7 @@ class DepartmentForm(forms.ModelForm):
             validating duplicate  code
         """
         code_inst = self.cleaned_data.get("code")
-        validate = self.__class__._meta.model.objects.filter(code=code_inst).exists()
+        validate = self.__class__._meta.model._default_manager.filter(code=code_inst).exists()
         if validate:
             raise forms.ValidationError(self.validation_messages.get("code", None))
         return code_inst
@@ -272,7 +272,7 @@ class DepartmentForm(forms.ModelForm):
             validating duplicate department name
         """
         name_inst = self.cleaned_data.get("name")
-        validate = self.__class__._meta.model.objects.filter(\
+        validate = self.__class__._meta.model._default_manager.filter(\
                         Q(name=self.name_inst)|Q(name__icontains=self.name_inst)).exists()    
         if validate:
             raise forms.ValidationError(self.validation_messages.get("name", None))
@@ -283,7 +283,7 @@ class DepartmentForm(forms.ModelForm):
             validating duplicate department head
         """
         head_inst = self.cleaned_data.get("department_head")
-        validate = self.__class__._meta.model.objects.filter(
+        validate = self.__class__._meta.model._default_manager.filter(
                                     department_head=self.head_inst).exists()
         if validate:
             raise forms.ValidationError(
@@ -295,7 +295,7 @@ class DepartmentForm(forms.ModelForm):
             validating duplicate department head mail
         """
         mail_inst = self.cleaned_data.get("department_head_mail")
-        validate = self.__class__._meta.model.objects.filter(
+        validate = self.__class__._meta.model._default_manager.filter(
                                     department_head_mail=mail_inst).exists()
         if validate:
             raise forms.ValidationError(
@@ -358,7 +358,7 @@ class EmpContactInfoForm(forms.ModelForm):
             validates duplicate contact email
         """
         email_inst = self.cleaned_data.get("contact_email")
-        validate = self.__class__._meta.model.objects.filter(contact_email=email_inst).exists()
+        validate = self.__class__._meta.model._default_manager.filter(contact_email=email_inst).exists()
         if validate:
             raise forms.ValidationError(self.validation_messages.get("c_mail", None))
         return email_inst
@@ -368,7 +368,7 @@ class EmpContactInfoForm(forms.ModelForm):
             validates duplicate contact number
         """
         num_inst = self.cleaned_data.get("contact_number")
-        validate = self.__class__._meta.model.objects.filter(contact_number=num_inst).exists()
+        validate = self.__class__._meta.model._default_manager.filter(contact_number=num_inst).exists()
         if validate:
             raise forms.ValidationError(self.validation_messages.get("c_number", None))
         return num_inst
@@ -435,14 +435,14 @@ class EmpBankInfoForm(forms.ModelForm):
     
     def clean_bank_account_number(self):
         ban = self.cleaned_data.get("bank_account_number")
-        validate = self.__class__._meta.model.objects.filter(bank_account_number=ban).exists()
+        validate = self.__class__._meta.model._default_manager.filter(bank_account_number=ban).exists()
         if validate:
             raise forms.ValidationError(self.validation_messages.get("bank_num", None))
         return ban
     
     def clean_pan_num(self):
         pan = self.cleaned_data.get("pan_num")
-        validate = self.__class__._meta.model.objects.filter(pan_num=pan).exists()
+        validate = self.__class__._meta.model._default_manager.filter(pan_num=pan).exists()
         if validate:
             raise forms.ValidationError(self.validation_messages.get("pan_num", None))
         return pan

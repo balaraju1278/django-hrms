@@ -13,6 +13,8 @@ class PhoneAddress(models.Model):
     """
         extra utility phone address for future use
     """
+    name = models.CharField(max_length=100, 
+                            verbose_name=_("Name"))
     phone = models.CharField(
             max_length=15, 
             verbose_name=_("Phone Number"))
@@ -23,7 +25,7 @@ class PhoneAddress(models.Model):
     def validate_unique(self, *args, **kwargs):
         super(PhoneAddress, self).validate_unique(*args, **kwargs)
         
-        qs = self.__class__.default_manager.filter(
+        qs = self.__class__._default_manager.filter(
             phone=self.phone        
         )
         if qs.exists():
@@ -46,6 +48,8 @@ class EmailAddress(models.Model):
     """
         extra utility email address for future use
     """
+    name = models.CharField(max_length=100, 
+                            verbose_name=_("Name"))
     email = models.EmailField(
             max_length=200, 
             verbose_name=_("Email Address"))
@@ -56,7 +60,7 @@ class EmailAddress(models.Model):
     def validate_unique(self, *args, **kwargs):
         super(EmailAddress, self).validate_unique(*args, **kwargs)
         
-        qs = self.__class__.default_manager.filter(
+        qs = self.__class__._default_manager.filter(
             email=self.email        
         )
         if qs.exists():
