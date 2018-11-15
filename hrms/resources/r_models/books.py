@@ -1,9 +1,10 @@
 from django.db import models
 from django.utils.translation import ugettext as _
 from django.core.validators import ValidationError
+from django.conf import settings
 
 
-class Category(models.Model):
+class BooksCategory(models.Model):
     _type = models.CharField(max_length=100) 
     
     def get__type(self):
@@ -19,7 +20,7 @@ class Category(models.Model):
         return ', '.join(self.book_types.all().values_list('name', flat=True))
     
     def validate_unique(self, *args, **kwargs):
-        super(Category, self).validate_unique(*args, **kwargs)
+        super(BooksCategory, self).validate_unique(*args, **kwargs)
         qs = self.__class__._default_manager.filter(_type=self._type).exists()
         if qs:
             raise ValidationError("Category already exists")
@@ -42,10 +43,10 @@ class Book(models.Model):
     language = models.CharField(max_length=100)
     programing_language = models.CharField(max_length=40)
     book_type = models.ForeignKey(
-                Category, related_name="book_types",
+                BooksCategory, related_name="book_types",
                 on_delete=models.CASCADE, 
                 verbose_name=_("book_types"))
-    file = models.FileField(upload_to='/resources/books')
+    file = models.FileField(upload_to='resources/books/')
     
     class Meta:
         db_table = 'books'
@@ -86,15 +87,15 @@ class Book(models.Model):
         return ', '.join(self.authors.all().values_list('name', flat=True))
     
     def get_language_descendants(self):
-        lg_books = self.__class__._meta.model._default_manager.filter(language=self.get_language)
+        lg_books = self.__class__._default_manager.filter(language=self.get_language)
         return lg_books
     
     def get_program_descendants(self):
-        pg_books = self.__class__._meta.model._default_manager.filter(programing_language=self.get_programing_language)
+        pg_books = self.__class__._default_manager.filter(programing_language=self.get_programing_language)
         return pg_books
     
     def get_book_type_descendants(self):
-        bt_books = self.__class__._meta.model._default_manager.filter(book_type=self.book_type)
+        bt_books = self.__class__._default_manager.filter(book_type=self.book_type)
         return bt_books
         
     def validate_unique(self, *args, **kwargs):
@@ -132,4 +133,27 @@ class Author(models.Model):
         return self.name
 
         
+class Reader(models.Model):
+    reader = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return '{}==.{}'.format(self.book, self.reader)
+    
+    def __repr__(self):
+        return '{}==.{}'.format(self.book, self.reader)
+
+
+class BComment(models.Model):
+    book = models.ForeignKey(Book, related_name='comments')
+    commentor = models.ForeignKey(settings.AUTH_USER_MODEL)
+    commented_time = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField()
+    text = models.TextField()
+    
+    def __str__(self):
+        return self.text
+    
+    def get_text(self):
+        return self.text
     

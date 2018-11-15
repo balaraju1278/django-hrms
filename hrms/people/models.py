@@ -142,6 +142,17 @@ class Department(models.Model):
     def __str__(self):
         return self.name
     
+    
+    @classmethod
+    def update(cls, id, department_head, department_head_mail):
+        from django.db import transaction
+        with transaction.atomic():
+            dept = (cls.objects.select_for_update().get(id=id))
+            dept.department_head=self.department_head
+            dept.department_head_mail=self.department_head_mail
+            dept.save()
+        return dept
+        
     @classmethod
     def from_db(cls, db, field_names, values):
         if len(values) != len(cls._meta.concrete_fields):
@@ -1257,7 +1268,7 @@ class EmpBankInfo(models.Model):
         ordering = ['bank_name']
         verbose_name = _("Employees Bank Details")
         verbose_name_plural = _("Employees Bank Details")
-
+        
 
 class EmpSkillProfile(models.Model):
     """

@@ -2,11 +2,29 @@ from django.shortcuts import render
 from django.shortucts import render, redirect
 from django.views import generic
 
-from .forms import BookFormset, BookModelFormset, BookModelForm, AuthorFormset
-from .models import Book, Author
+from resources.forms import (BookFormset, BookModelFormset, BookModelForm, AuthorFormset)
+from resources.models import  (Book,Author,Reader, 
+                               BComment,BooksCategory,
+                               Video, Viewer,VComment,
+                               VideosCategory)
+
 # Create your views here.
 
 
+
+
+class BooksListView(generic.ListView):
+    model = Book
+    context_object_name = 'books'
+    template_name = 'books_list.html'
+
+
+class BookView(generic.DetailView):
+    model = Book
+    context_object_name = 'book'
+    template_name = 'books_details.html'
+
+    
 def add_book(request):
     template_name = 'add_book.html'
     heading_message = 'Adding Book to Reources'

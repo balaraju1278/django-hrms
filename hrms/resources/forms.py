@@ -50,10 +50,9 @@ class BookForm(forms.Form):
     
     
 class BookModelForm(forms.ModelForm):
-    
     class Meta:
         model = Book
-        fields = ('name', 'isbn_number', 'language', 'progaming_language', 'book_type', 'file')
+        fields = ('name', 'isbn_number', 'language', 'programing_language', 'file')
         labels = {
             'name': 'Book Name',
             'isbn_number': 'Enter ISBN Number',
@@ -83,10 +82,7 @@ class BookModelForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder' : 'Enter Book Type ex:Motivational, programming ..etc'
             }),
-            'file': forms.FileField(attrs={
-                'class': 'form-control',
-                'placeholder' : 'select book file'
-            })
+            
                     
         }
         
@@ -107,7 +103,7 @@ class BookModelForm(forms.ModelForm):
 
 BookFormset = formset_factory(BookForm)
 BookModelFormset = modelformset_factory(
-    Book, fields=('name','isbn_number', 'language', 'programing_language', 'book_type', 'file' ),
+    Book, fields=('name','isbn_number', 'language', 'programing_language','file' ),
     extra=1,
     widgets={
           'name': forms.TextInput(attrs={
@@ -126,14 +122,7 @@ BookModelFormset = modelformset_factory(
                 'class': 'form-control',
                 'placeholder' : 'Enter Programing Language ex: data science, sales'
             }),
-            'book_type': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder' : 'Enter Book Type ex:Motivational, programming ..etc'
-            }),
-            'file': forms.FileField(attrs={
-                'class': 'form-control',
-                'placeholder' : 'select book file'
-            }) 
+            
     }
 )
 
